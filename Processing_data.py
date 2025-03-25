@@ -1,16 +1,16 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
-import math as mt
-from scipy.special import erf
-import re
+
+import Processing_wind_flow
+import Data_loader
+import Normalize_data
+import Appr_data
 
 
-const_normal = 10
+#const_normal = 10
 
-name_of_files = [ "F27_data_arr.dat", "F30_data_arr.dat", "F32_data_arr.dat", "F35_data_arr.dat", "F37_data_arr.dat", "F40_data_arr.dat", "F42_data_arr.dat", "F45_data_arr.dat", "F47_data_arr.dat", "F50_data_arr.dat"]
+#name_of_files = [ "F27_data_arr.dat", "F30_data_arr.dat", "F32_data_arr.dat", "F35_data_arr.dat", "F37_data_arr.dat", "F40_data_arr.dat", "F42_data_arr.dat", "F45_data_arr.dat", "F47_data_arr.dat", "F50_data_arr.dat"]
 
-num_of_files = [27,30,32,35,37,40,42,45,47,50]
+#num_of_files = [27,30,32,35,37,40,42,45,47,50]
 
 # def get_value(r_input):
 #     data = {
@@ -29,29 +29,60 @@ num_of_files = [27,30,32,35,37,40,42,45,47,50]
 #     closest_key = min(keys, key=lambda x: abs(x - r_input))
 #     return data[closest_key]
 
-def processing_the_result(file_path, limit_of_thikness, limit_of_time, amount_of_array):
-    unsorted_times, unsorted_points, sorted_time, sorted_points = load_file(file_path)
-    sorted_points = average_points(sorted_points, amount_of_array)
-    sorted_time = average_time(sorted_time, amount_of_array)
 
-    point_mask = [np.array([limit_of_thikness > temp_item for temp_item in item]) for item in points]
-    points = [np.array(arr)[mask_temp] for arr, mask_temp in zip(points, point_mask)]
-    time_mask = np.array([limit_of_time > time for time in times])
-    times = times[time_mask]
-    normalize_points = [to_normalize_data(item)[0] for item in points]  # Value of points
-    min_max_normalize_points = [to_normalize_data(item)[1] for item in points]  # Value of max and min in each array
-    funk_of_res_for_all_arrays = [to_get_funk_of_prob(normal, val_normal) for normal, val_normal in zip(normalize_points, min_max_normalize_points)]
+def processing_the_result(limit_of_thikness, limit_of_time, amount, normalize_const,file_path):
+    try:
+       sorted_points, sorted_times, unsorted_points, unsorted_times = Data_loader.load_file(file_path)  # разделяем данные на разные массивы
+       average_times = Data_loader.funk_average_times(amount, sorted_times)  # также делаем со временем и находим среднее
+       time_mask = np.array([limit_of_time > time for time in average_times])
+       average_times = (np.array(average_times)[time_mask])
 
-    check_wait = [item[2] for item in funk_of_res_for_all_arrays]
-    check_wait = np.array(check_wait)[time_mask]
-    dispersion = [item[3] for item in funk_of_res_for_all_arrays]
-    dispersion = np.array(dispersion)[time_mask]
-    sigma = [item[4] for item in funk_of_res_for_all_arrays]
-    sigma = np.array(sigma)[time_mask]
-    nu = [item[5] for item in funk_of_res_for_all_arrays]
-    nu = np.array(nu)[time_mask]
+       mask_sorted_points = [np.array([limit_of_thikness > item for item in sub_list_points]) for sub_list_points in sorted_points]
+       sorted_points = [np.array(arr)[mask_temp] for arr, mask_temp in zip(sorted_points, mask_sorted_points)]
+       average_points = Data_loader.funk_average_points(amount, sorted_points)
 
-    return times, dispersion, check_wait, points, times_c, points_c, sigma, nu, curr_name
+       normalize_data, value_data = Normalize_data.to_normalize_list_data(normalize_const, average_points)  # нормируем lgyy
+
+       y_funk_of_probability_list, x_funk_of_probability_list, check_wait_list, dispersion_list, sigma_list, nu_list = Appr_data.to_get_funk_of_prob_for_all(normalize_data)
+
+       check_wait_list_correct = [Normalize_data.to_return_data(check_wait, value[0], value[1], normalize_const) for check_wait, value in zip(check_wait_list, value_data)]
+
+       check_wait = np.array(check_wait_list_correct)[time_mask]
+
+
+       dispersion = np.array(dispersion_list)[time_mask]
+
+       sigma = np.array(sigma_list)[time_mask]
+       nu = np.array(nu_list)[time_mask]
+
+       return (check_wait,dispersion), (average_times, average_points), (unsorted_times, unsorted_points), (nu, sigma), (sorted_points, sorted_times)
+    except Exception as e:
+        return ([],[]),([],[]),([],[]),([],[]),([],[])
+
+
+#def processing_the_result(file_path, limit_of_thikness, limit_of_time, amount_of_array):
+#    unsorted_times, unsorted_points, sorted_time, sorted_points = load_file(file_path)
+#   sorted_points = average_points(sorted_points, amount_of_array)
+#    sorted_time = average_time(sorted_time, amount_of_array)
+#
+#    point_mask = [np.array([limit_of_thikness > temp_item for temp_item in item]) for item in points]
+#    points = [np.array(arr)[mask_temp] for arr, mask_temp in zip(points, point_mask)]
+#    time_mask = np.array([limit_of_time > time for time in times])
+#    times = times[time_mask]
+#    normalize_points = [to_normalize_data(item)[0] for item in points]  # Value of points
+#    min_max_normalize_points = [to_normalize_data(item)[1] for item in points]  # Value of max and min in each array
+#    funk_of_res_for_all_arrays = [to_get_funk_of_prob(normal, val_normal) for normal, val_normal in zip(normalize_points, min_max_normalize_points)]
+
+#    check_wait = [item[2] for item in funk_of_res_for_all_arrays]
+#    check_wait = np.array(check_wait)[time_mask]
+#    dispersion = [item[3] for item in funk_of_res_for_all_arrays]
+#    dispersion = np.array(dispersion)[time_mask]
+#   sigma = [item[4] for item in funk_of_res_for_all_arrays]
+ #   sigma = np.array(sigma)[time_mask]
+ #   nu = [item[5] for item in funk_of_res_for_all_arrays]
+ #   nu = np.array(nu)[time_mask]
+#
+#    return times, dispersion, check_wait, points, times_c, points_c, sigma, nu, curr_name
 
 
 

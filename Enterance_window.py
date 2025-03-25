@@ -1,8 +1,10 @@
-import sys
+
 from PyQt5 import QtWidgets
 from PyQt5 import uic
-from sqlalchemy.sql.coercions import expect
-from Processing_bags_data_window import ProccesingFlow
+from Processing_bags_data_window import ProccesingBags
+from Processing_wind_flow import ProcessingFlow
+
+import sys ; sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -22,11 +24,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def processing_wind_flow_data(self):
-        pass
+        self.flow_window = ProcessingFlow()
+        self.flow_window.show()
+        self.close()
+
 
     def processing_proccesing_bags_data(self):
-        self.sub_window = ProccesingFlow()
-        self.sub_window.show()
+        self.bag_window = ProccesingBags()
+        self.bag_window.show()
         self.close()
 
 

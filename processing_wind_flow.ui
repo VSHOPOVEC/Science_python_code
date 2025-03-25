@@ -1,58 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ApproximateList</class>
- <widget class="QMainWindow" name="ApproximateList">
+ <class>Processing_wind_flow</class>
+ <widget class="QMainWindow" name="Processing_wind_flow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>473</height>
+    <width>1280</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Approximate</string>
+   <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>69</x>
-      <y>39</y>
-      <width>511</width>
-      <height>331</height>
+      <x>680</x>
+      <y>550</y>
+      <width>481</width>
+      <height>171</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QPushButton" name="liner_button">
+      <widget class="QPushButton" name="open_button">
        <property name="text">
-        <string>Liner</string>
+        <string>Open</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="poly_btn">
+      <widget class="QPushButton" name="save_button">
        <property name="text">
-        <string>Poly</string>
+        <string>Save</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="liner_button_2">
+      <widget class="QPushButton" name="compose_button">
        <property name="text">
-        <string>Exp</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="Return">
-       <property name="text">
-        <string>Return</string>
+        <string>Compose graphic</string>
        </property>
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>30</y>
+      <width>1111</width>
+      <height>491</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="canvasLayout"/>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -60,7 +64,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>640</width>
+     <width>1280</width>
      <height>30</height>
     </rect>
    </property>

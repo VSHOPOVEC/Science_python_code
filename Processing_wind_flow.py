@@ -1,134 +1,80 @@
+from PyQt5 import QtWidgets, uic
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import numpy as np
-import re
 
-patternBlock = re.compile(r'\[DATA BLOCK (\d+)-(\d+)-(\d+)\]')
-patternData = re.compile(r'\-?\d*\.?\d+')
-patternPosition = re.compile(r'Position no\.\:\s+(\d+)')
+from ProcessingWindFlow import reader
 
-test = '[DATA BLOCK 9-1-1]'
-test1 = 'Position no.:     13'
-test3 = "59.9890028 10.4804106 -0.9074075"
+class ProcessingFlow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
 
+        self.file_path = None
+        self.position_arr, self.column_time, self.column_speed, self.column_arr = [],[],[],[]
+        self.dates = []
 
-def reader(file_path):
-    with open(file_path) as file:
-        status_position = False
-        status_block = False
-        position_arr = []
-        column_time = []
-        column_speed = []
-        column_arr = []
-        for line in file:
-            if re.search(patternPosition, line) and not status_position:
-                status_position = True
-                status_block = False
-                position = re.findall(patternPosition, line)[0]
-                position_arr.append(int(position))
-                temp_time_arr = []
-                temp_speed_arr = []
-                temp_arr = []
-                column_time.append(temp_time_arr)
-                column_speed.append(temp_speed_arr)
-                column_arr.append(temp_arr)
+        self.setup_ui()
 
-            elif re.search(patternBlock,line) and status_position:
-                status_block = True
+        self.open_button.clicked.connect(self.read_file)
+        self.compose_button.clicked.connect(self.compose_graphic)
+
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.canvasLayout.addWidget(self.canvas)
 
 
-            elif re.search(patternData,line) and (status_position and status_block):
-                data_1, data_2, data_3 = re.findall(patternData, line)
-                temp_time_arr.append(float(data_1))
-                temp_speed_arr.append(float(data_2))
-                temp_arr.append(float(data_3))
-
-            elif not re.search(patternData,line) and (status_position and status_block):
-                status_position = False
-
-    return position_arr, column_time, column_speed, column_arr
-
-def reader_with_plot(file_path, name_file_to_save):
-    with open(file_path) as file:
-        status_position = False
-        status_block = False
-        position_arr = []
-        column_time = []
-        column_speed = []
-        column_arr = []
-        for line in file:
-            if re.search(patternPosition, line) and not status_position:
-                status_position = True
-                status_block = False
-                position = re.findall(patternPosition, line)[0]
-                position_arr.append(int(position))
-                temp_time_arr = []
-                temp_speed_arr = []
-                temp_arr = []
-                column_time.append(temp_time_arr)
-                column_speed.append(temp_speed_arr)
-                column_arr.append(temp_arr)
-
-            elif re.search(patternBlock,line) and status_position:
-                status_block = True
+    def to_plot(self):
+        self.figure.clear()
+        fig = self.figure.add_subplot(111)
+        mean_speed = [float(np.mean(item_s)) for item_s in self.column_speed]
+        std_speed = [float(np.std(item_s)) for item_s in self.column_speed]
+        fig.errorbar(mean_speed, self.position_arr, xerr=std_speed, fmt='o', ecolor='r', capsize=5, label='Данные с ошибками')
+        fig.plot(mean_speed, self.position_arr)
+        fig.set_title(str(self.file_path))  # Название графика
+        fig.set_xlabel("Velocity")  # Подпись оси X
+        fig.set_ylabel("Position")
+        fig.grid()
+        self.canvas.draw()
 
 
-            elif re.search(patternData,line) and (status_position and status_block):
-                data_1, data_2, data_3 = re.findall(patternData, line)
-                temp_time_arr.append(float(data_1))
-                temp_speed_arr.append(float(data_2))
-                temp_arr.append(float(data_3))
-
-            elif not re.search(patternData,line) and (status_position and status_block):
-                status_position = False
-
-    mean_speed = [float(np.mean(speed)) for speed in column_speed]
-    std_speed = [float(np.std(speed)) for speed in column_speed]
-    plt.figure(figsize=(30, 20))
-    plt.errorbar(mean_speed, position_arr, xerr=std_speed, fmt='o', ecolor='r', capsize=5, label='Данные с ошибками')
-    plt.plot(mean_speed, position_arr)
-    plt.title(name_file_to_save, fontsize=30)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.xlabel('Speed', fontsize=20)
-    plt.ylabel('Position', fontsize=20)
-    plt.savefig(name_file_to_save + ".pdf", format='pdf', dpi=300)
-    plt.grid()
-    plt.show()
-
-    return position_arr, column_time, column_speed, column_arr
-
-
-def to_plot_result(position, speed, name):
-    mean_speed = [float(np.mean(item_s)) for item_s in speed]
-    std_speed = [float(np.std(item_s)) for item_s in speed]
-    plt.figure(figsize=(30, 20))
-    plt.errorbar(mean_speed, position, xerr=std_speed, fmt='o', ecolor='r', capsize=5, label='Данные с ошибками')
-    plt.plot(mean_speed, position)
-    plt.title(name, fontsize=30)
-    plt.xticks(fontsize = 20)
-    plt.yticks(fontsize = 20)
-    plt.xlabel('Speed', fontsize = 20)
-    plt.ylabel('Position', fontsize = 20)
-    plt.grid()
-    plt.show()
-
-def to_plot_results(position_arr, speed_arr, name_of_graph):
-    speed_2d_arr = [[float(np.mean(item_s)) for item_s in speed] for speed in speed_arr]
-    plt.figure(figsize=(40, 30))
-    for pos_item, item in zip(position_arr,speed_2d_arr):
-        plt.plot(item,pos_item)
-        plt.scatter(item,pos_item)
-    plt.title(name_of_graph, fontsize=30)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.xlabel('Speed', fontsize=20)
-    plt.ylabel('Position', fontsize=20)
-    plt.grid()
-    plt.show()
+    def to_plot_general(self):
+        self.figure.clear()
+        fig = self.figure.add_subplot(111)
+        speed_2d_arr = [[float(np.mean(item_s)) for item_s in speed] for speed in self.column_speed]
+        for pos_item, item in zip(self.position_arr, speed_2d_arr):
+            plt.plot(item, pos_item)
+            plt.scatter(item, pos_item)
+        fig.set_title("Compose graphic")
+        fig.set_xlabel('Speed')
+        fig.set_ylabel('Position')
+        fig.grid()
+        self.canvas.draw()
 
 
 
-#position_arr_, time_arr_, speed_arr_, *_ = reader("/home/mikhailm/Documents/Python_Science_App/20250226_110V_v1.txt")#Нужен для построние общего графика
-#position_arr_2, time_arr_2, speed_arr_2,*_ = reader("/home/mikhailm/Documents/Python_Science_App/20250226_140V_v1.txt")#Нужен для построние общего графика
-#to_plot_results([position_arr_,position_arr_2],[speed_arr_,speed_arr_2], "ALL_GRAPH")#создаешь массив позиций и скоростей и передаешь функции
-#reader_with_plot("/home/mikhailm/Documents/Python_Science_App/20250226_110V_v1.txt", "110V")#Сразу строит график
+    def read_file(self):
+        self.file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self,"Open_data", "All Files(*);;Text Files(*.txt)", "")
+        if self.file_path:
+            self.position_arr, self.column_time, self.column_speed, self.column_arr = reader(self.file_path)
+            self.to_plot()
+
+
+    def compose_graphic(self):
+        self.file_path,_ = QtWidgets.QFileDialog.getOpenFileNames(self, "Open_data", "All Files(*);;Text Files(*.txt)", "")
+        if self.file_path:
+            self.position_arr = []; self.column_time = []; self.column_speed = []; self.column_arr = []
+            for path in self.file_path:
+               data = reader(path)
+               self.position_arr.append(data[0]); self.column_time.append(data[1]); self.column_speed.append(data[2]); self.column_arr.append(data[3])
+        self.to_plot_general()
+
+
+
+
+
+    def setup_ui(self):
+        try:
+           uic.loadUi("processing_wind_flow.ui", self)
+        except Exception as e:
+            print(e)
